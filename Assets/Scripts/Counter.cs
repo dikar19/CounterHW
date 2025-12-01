@@ -1,32 +1,48 @@
+using System;
+using System.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class Counter : MonoBehaviour
 {
-    private float interval = 0.5f;
-    private float timer = 0f;
-    private int counter = 0;
-    private bool isCounting = false;
+    [SerializeField] private float interval = 0.5f;
+    [SerializeField] private Clicker _clicker;
 
-    void Update()
+    private float _count = 0;
+
+    private Coroutine _coroutine;
+
+    public event Action<float> Changed;
+
+    private void OnEnable()
     {
-        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+        _clicker.Clicked += CounterStart;
+    }
+
+    private void OnDisable()
+    {
+        _clicker.Clicked -= CounterStart;
+    }
+
+    public void CounterStart()
+    {
+        if (_coroutine != null)
         {
-            isCounting = !isCounting;
+            StopCoroutine(_coroutine);
+            _coroutine = null;
         }
-
-        if (isCounting)
+        else
         {
-            timer += Time.deltaTime;
+            _coroutine = StartCoroutine(Counting());
+        }
+    }
 
-            if (timer >= interval)
-            {
-                counter++;
-                timer -= interval;
-
-                Debug.Log("—четчик: " + counter);
-            }
+    private IEnumerator Counting()
+    {
+        while (enabled)
+        {
+            yield return new WaitForSeconds(interval);
+            _count++;
+            Changed?.Invoke(_count);
         }
     }
 }
-
